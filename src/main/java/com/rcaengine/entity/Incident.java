@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "incidents")
@@ -48,4 +50,6 @@ public class Incident {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+    @OneToMany(mappedBy = "incident")
+    private List<LogEvent> logEvents = new ArrayList<>();
 }

@@ -48,4 +48,7 @@ public class LogEvent {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "incident_id")
+    private Incident incident;
 }
