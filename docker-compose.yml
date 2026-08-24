@@ -1,0 +1,16 @@
+services:
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: rca-postgres
+    environment:
+      POSTGRES_DB: rca_engine
+      POSTGRES_USER: rca_user
+      POSTGRES_PASSWORD:  rca_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
