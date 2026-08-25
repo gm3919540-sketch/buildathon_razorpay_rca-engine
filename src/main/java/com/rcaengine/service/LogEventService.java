@@ -14,6 +14,7 @@ public class LogEventService {
     private final IncidentService incidentService;
     private final LogEventRepository logEventRepository;
     private final ServiceService serviceService;
+    private final ExceptionFingerprintService fingerprintService;
 
     public LogEvent save(LogEventMessage message) {
 
@@ -28,11 +29,17 @@ public class LogEventService {
                     message
             );
         }
+        String fingerprint =
+                fingerprintService.generateFingerprint(
+                        message.exceptionType(),
+                        message.message()
+                );
 
         LogEvent logEvent = new LogEvent();
 
         logEvent.setService(service);
         logEvent.setIncident(incident);
+        logEvent.setFingerprint(fingerprint);
         logEvent.setTimestamp(message.timestamp());
         logEvent.setLevel(message.level());
         logEvent.setMessage(message.message());
