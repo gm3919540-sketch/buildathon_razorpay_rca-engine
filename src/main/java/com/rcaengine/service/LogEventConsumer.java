@@ -8,6 +8,11 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class LogEventConsumer {
+    private final LogEventService logEventService;
+
+    public LogEventConsumer(LogEventService logEventService) {
+        this.logEventService = logEventService;
+    }
 
     @KafkaListener(
             topics = "application-logs",
@@ -22,6 +27,7 @@ public class LogEventConsumer {
                 "Received log event from service: {}",
                 event.serviceName()
         );
+        logEventService.save(event);
 
         log.info(
                 "Message: {}",
