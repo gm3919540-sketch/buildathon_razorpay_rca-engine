@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class KnowledgeService {
 
+    private final KnowledgeVectorService knowledgeVectorService;
     private final HistoricalIncidentRepository repository;
 
     public HistoricalIncident addHistoricalIncident(
@@ -37,6 +38,11 @@ public class KnowledgeService {
                         : LocalDateTime.now()
         );
 
-        return repository.save(incident);
+        HistoricalIncident saved =
+                repository.save(incident);
+
+        knowledgeVectorService.indexHistoricalIncident(saved);
+
+        return saved;
     }
 }
