@@ -1,6 +1,7 @@
 package com.rcaengine.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.rcaengine.dto.GeneratedRCAResponse;
 import com.rcaengine.dto.RCAReport;
 import com.rcaengine.dto.RCAReviewRequest;
 import com.rcaengine.entity.GeneratedRCA;
@@ -19,13 +20,21 @@ public class RCAController {
 
     private final RCAService rcaService;
 
-@GetMapping("/incidents/{incidentId}")
-public RCAReport generateRCA(
-        @PathVariable Long incidentId
-) throws JsonProcessingException {
+    @GetMapping("/incidents/{incidentId}")
+    public RCAReport generateRCA(
+            @PathVariable Long incidentId
+    ) throws JsonProcessingException {
 
-    return rcaService.generateRCA(incidentId);
-}
+        return rcaService.generateRCA(incidentId);
+    }
+
+    @GetMapping("/incidents/{incidentId}/report")
+    public GeneratedRCAResponse getExistingRCA(
+            @PathVariable Long incidentId
+    ) {
+        return rcaService.getExistingRCA(incidentId);
+    }
+
     @PutMapping("/incidents/{incidentId}/review")
     public GeneratedRCA reviewRCA(
             @PathVariable Long incidentId,
@@ -36,6 +45,7 @@ public RCAReport generateRCA(
                 request
         );
     }
+
     @PostMapping("/incidents/{incidentId}/index")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void indexReviewedRCA(
@@ -43,5 +53,4 @@ public RCAReport generateRCA(
     ) {
         rcaService.indexReviewedRCA(incidentId);
     }
-
 }

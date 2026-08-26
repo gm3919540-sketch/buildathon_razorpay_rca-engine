@@ -40,6 +40,9 @@ public class GeneratedRCA {
     @Column(nullable = false)
     private boolean reviewed = false;
 
+    @Column(nullable = false)
+    private boolean indexed = false;
+
     @Column(columnDefinition = "TEXT")
     private String actualRootCause;
 

@@ -2,6 +2,7 @@ package com.rcaengine.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rcaengine.dto.GeneratedRCAResponse;
 import com.rcaengine.dto.RCAReport;
 import com.rcaengine.dto.RCAReviewRequest;
 import com.rcaengine.entity.GeneratedRCA;
@@ -143,6 +144,29 @@ public class RCAService {
         return report;
 
     }
+    public GeneratedRCAResponse getExistingRCA(Long incidentId) {
+
+        GeneratedRCA rca = generatedRCARepository
+                .findByIncidentId(incidentId)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "RCA not found for incident: " + incidentId
+                        )
+                );
+
+        return new GeneratedRCAResponse(
+                rca.getId(),
+                rca.getIncident().getId(),
+                rca.getRootCause(),
+                rca.getEvidence(),
+                rca.getRecommendedActions(),
+                rca.getConfidence(),
+                rca.isReviewed(),
+                rca.isIndexed(),
+                rca.getActualRootCause(),
+                rca.getActualResolution()
+        );
+    }
     private String extractExceptionType(Incident incident) {
         return incident.getTitle();
     }
@@ -188,6 +212,10 @@ public class RCAService {
             throw new IllegalStateException(
                     "RCA must be reviewed before indexing"
             );
+        }
+
+        if (rca.isIndexed()) {
+            return;
         }
 
         String content = """
@@ -250,5 +278,9 @@ public class RCAService {
         vectorStore.add(
                 List.of(document)
         );
+
+        rca.setIndexed(true);
+
+        generatedRCARepository.save(rca);
     }
 }
