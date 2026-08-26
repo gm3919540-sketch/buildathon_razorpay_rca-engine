@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public record RCAReviewRequest(
 
-        boolean approved,
+        Boolean approved,
 
         @NotBlank
         String actualRootCause,

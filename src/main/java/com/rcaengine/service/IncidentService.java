@@ -8,6 +8,7 @@ import com.rcaengine.entity.Service;
 import com.rcaengine.repository.IncidentRepository;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Optional;
 
 @org.springframework.stereotype.Service
 @RequiredArgsConstructor
@@ -20,12 +21,18 @@ public class IncidentService {
             LogEventMessage message
     ) {
 
-        return incidentRepository
-                .findFirstByServiceIdAndStatusOrderByStartedAtDesc(
-                        service.getId(),
-                        IncidentStatus.OPEN
-                )
-                .orElseGet(() -> createIncident(service, message));
+        Optional<Incident> existingIncident =
+                incidentRepository
+                        .findFirstByServiceIdAndStatusOrderByStartedAtDesc(
+                                service.getId(),
+                                IncidentStatus.OPEN
+                        );
+
+        if (existingIncident.isPresent()) {
+            return existingIncident.get();
+        }
+
+        return createIncident(service, message);
     }
 
     private Incident createIncident(
@@ -61,5 +68,14 @@ public class IncidentService {
             case "WARN" -> IncidentSeverity.MEDIUM;
             default -> IncidentSeverity.LOW;
         };
+    }
+    public boolean hasOpenIncident(Service service) {
+
+        return incidentRepository
+                .findFirstByServiceIdAndStatusOrderByStartedAtDesc(
+                        service.getId(),
+                        IncidentStatus.OPEN
+                )
+                .isPresent();
     }
 }

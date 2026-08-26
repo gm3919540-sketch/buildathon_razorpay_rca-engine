@@ -1,5 +1,6 @@
 package com.rcaengine.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.rcaengine.dto.LogEventMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -19,7 +20,7 @@ public class LogEventConsumer {
             groupId = "rca-engine-group",
             containerFactory = "kafkaListenerContainerFactory"
     )
-    public void consume(LogEventMessage event) {
+    public void consume(LogEventMessage event) throws JsonProcessingException {
 
         log.info("🔥 KAFKA MESSAGE RECEIVED");
 

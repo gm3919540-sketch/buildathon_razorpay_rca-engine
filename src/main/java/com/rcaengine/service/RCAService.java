@@ -40,6 +40,16 @@ public class RCAService {
                                 "Incident not found: " + incidentId
                         )
                 );
+        GeneratedRCA existingRCA =
+                generatedRCARepository
+                        .findByIncidentId(incidentId)
+                        .orElse(null);
+
+        if (existingRCA != null) {
+            throw new IllegalStateException(
+                    "RCA already exists for incident: " + incidentId
+            );
+        }
 
         String query = """
                 Service: %s
@@ -150,6 +160,7 @@ public class RCAService {
                                                 + incidentId
                                 )
                         );
+
 
         rca.setReviewed(true);
 
