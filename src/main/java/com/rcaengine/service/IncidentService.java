@@ -1,5 +1,6 @@
 package com.rcaengine.service;
 
+import com.rcaengine.dto.IncidentResponse;
 import com.rcaengine.dto.LogEventMessage;
 import com.rcaengine.entity.Incident;
 import com.rcaengine.entity.IncidentSeverity;
@@ -7,6 +8,7 @@ import com.rcaengine.entity.IncidentStatus;
 import com.rcaengine.entity.Service;
 import com.rcaengine.repository.IncidentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.util.Optional;
 
@@ -14,14 +16,16 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class IncidentService {
 
+    private final SimpMessagingTemplate messagingTemplate;
     private final IncidentRepository incidentRepository;
 
-    public Incident findOrCreateIncident(
+    public IncidentResult findOrCreateIncident(
             Service service,
             LogEventMessage message
     ) {
 
-        String exceptionType = message.exceptionType();
+        String exceptionType =
+                message.exceptionType();
 
         Optional<Incident> existingIncident =
                 incidentRepository
@@ -32,10 +36,23 @@ public class IncidentService {
                         );
 
         if (existingIncident.isPresent()) {
-            return existingIncident.get();
+
+            return new IncidentResult(
+                    existingIncident.get(),
+                    false
+            );
         }
 
-        return createIncident(service, message);
+        Incident incident =
+                createIncident(
+                        service,
+                        message
+                );
+
+        return new IncidentResult(
+                incident,
+                true
+        );
     }
 
     private Incident createIncident(
@@ -43,7 +60,8 @@ public class IncidentService {
             LogEventMessage message
     ) {
 
-        Incident incident = new Incident();
+        Incident incident =
+                new Incident();
 
         incident.setTitle(
                 service.getName()
@@ -56,7 +74,9 @@ public class IncidentService {
         );
 
         incident.setSeverity(
-                determineSeverity(message.level())
+                determineSeverity(
+                        message.level()
+                )
         );
 
         incident.setStatus(
@@ -71,9 +91,30 @@ public class IncidentService {
                 message.timestamp()
         );
 
-        return incidentRepository.save(
-                incident
+        Incident savedIncident =
+                incidentRepository.save(
+                        incident
+                );
+
+        IncidentResponse response =
+                new IncidentResponse(
+                        savedIncident.getId(),
+                        savedIncident.getTitle(),
+                        savedIncident.getDescription(),
+                        savedIncident.getSeverity(),
+                        savedIncident.getStatus(),
+                        savedIncident.getService().getName(),
+                        savedIncident.getStartedAt(),
+                        savedIncident.getResolvedAt(),
+                        savedIncident.getCreatedAt()
+                );
+
+        messagingTemplate.convertAndSend(
+                "/topic/incidents",
+                response
         );
+
+        return savedIncident;
     }
 
     private IncidentSeverity determineSeverity(
@@ -84,7 +125,9 @@ public class IncidentService {
             return IncidentSeverity.LOW;
         }
 
-        return switch (level.toUpperCase()) {
+        return switch (
+                level.toUpperCase()
+                ) {
 
             case "ERROR" ->
                     IncidentSeverity.HIGH;
@@ -96,15 +139,20 @@ public class IncidentService {
                     IncidentSeverity.LOW;
         };
     }
-    public Incident resolveIncident(Long id) {
 
-        Incident incident = incidentRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Incident not found: " + id
-                        )
-                );
+    public Incident resolveIncident(
+            Long id
+    ) {
+
+        Incident incident =
+                incidentRepository
+                        .findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Incident not found: "
+                                                + id
+                                )
+                        );
 
         incident.setStatus(
                 IncidentStatus.RESOLVED
@@ -114,9 +162,30 @@ public class IncidentService {
                 java.time.LocalDateTime.now()
         );
 
-        return incidentRepository.save(
-                incident
+        Incident savedIncident =
+                incidentRepository.save(
+                        incident
+                );
+
+        IncidentResponse response =
+                new IncidentResponse(
+                        savedIncident.getId(),
+                        savedIncident.getTitle(),
+                        savedIncident.getDescription(),
+                        savedIncident.getSeverity(),
+                        savedIncident.getStatus(),
+                        savedIncident.getService().getName(),
+                        savedIncident.getStartedAt(),
+                        savedIncident.getResolvedAt(),
+                        savedIncident.getCreatedAt()
+                );
+
+        messagingTemplate.convertAndSend(
+                "/topic/incidents",
+                response
         );
+
+        return savedIncident;
     }
 
     public boolean hasOpenIncident(
@@ -133,5 +202,11 @@ public class IncidentService {
                                 incident.getStatus()
                                         == IncidentStatus.OPEN
                 );
+    }
+
+    public record IncidentResult(
+            Incident incident,
+            boolean created
+    ) {
     }
 }
