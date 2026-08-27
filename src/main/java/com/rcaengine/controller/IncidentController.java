@@ -3,6 +3,7 @@ package com.rcaengine.controller;
 import com.rcaengine.dto.IncidentResponse;
 import com.rcaengine.entity.Incident;
 import com.rcaengine.repository.IncidentRepository;
+import com.rcaengine.service.IncidentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,7 @@ import java.util.List;
 public class IncidentController {
 
     private final IncidentRepository incidentRepository;
+    private final IncidentService incidentService;
 
     @GetMapping
     public List<IncidentResponse> getAllIncidents() {
@@ -36,6 +38,17 @@ public class IncidentController {
                                 "Incident not found: " + id
                         )
                 );
+
+        return toResponse(incident);
+    }
+
+    @PutMapping("/{id}/resolve")
+    public IncidentResponse resolveIncident(
+            @PathVariable Long id
+    ) {
+
+        Incident incident =
+                incidentService.resolveIncident(id);
 
         return toResponse(incident);
     }

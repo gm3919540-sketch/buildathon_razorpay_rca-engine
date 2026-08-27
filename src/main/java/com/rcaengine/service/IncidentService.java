@@ -21,11 +21,14 @@ public class IncidentService {
             LogEventMessage message
     ) {
 
+        String exceptionType = message.exceptionType();
+
         Optional<Incident> existingIncident =
                 incidentRepository
-                        .findFirstByServiceIdAndStatusOrderByStartedAtDesc(
+                        .findFirstByServiceIdAndStatusAndTitleContainingIgnoreCaseOrderByStartedAtDesc(
                                 service.getId(),
-                                IncidentStatus.OPEN
+                                IncidentStatus.OPEN,
+                                exceptionType
                         );
 
         if (existingIncident.isPresent()) {
@@ -43,39 +46,92 @@ public class IncidentService {
         Incident incident = new Incident();
 
         incident.setTitle(
-                service.getName() + " - " + message.exceptionType()
+                service.getName()
+                        + " - "
+                        + message.exceptionType()
         );
 
-        incident.setDescription(message.message());
+        incident.setDescription(
+                message.message()
+        );
 
         incident.setSeverity(
                 determineSeverity(message.level())
         );
 
-        incident.setStatus(IncidentStatus.OPEN);
+        incident.setStatus(
+                IncidentStatus.OPEN
+        );
 
-        incident.setService(service);
+        incident.setService(
+                service
+        );
 
-        incident.setStartedAt(message.timestamp());
+        incident.setStartedAt(
+                message.timestamp()
+        );
 
-        return incidentRepository.save(incident);
+        return incidentRepository.save(
+                incident
+        );
     }
 
-    private IncidentSeverity determineSeverity(String level) {
+    private IncidentSeverity determineSeverity(
+            String level
+    ) {
+
+        if (level == null) {
+            return IncidentSeverity.LOW;
+        }
 
         return switch (level.toUpperCase()) {
-            case "ERROR" -> IncidentSeverity.HIGH;
-            case "WARN" -> IncidentSeverity.MEDIUM;
-            default -> IncidentSeverity.LOW;
+
+            case "ERROR" ->
+                    IncidentSeverity.HIGH;
+
+            case "WARN" ->
+                    IncidentSeverity.MEDIUM;
+
+            default ->
+                    IncidentSeverity.LOW;
         };
     }
-    public boolean hasOpenIncident(Service service) {
+    public Incident resolveIncident(Long id) {
+
+        Incident incident = incidentRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Incident not found: " + id
+                        )
+                );
+
+        incident.setStatus(
+                IncidentStatus.RESOLVED
+        );
+
+        incident.setResolvedAt(
+                java.time.LocalDateTime.now()
+        );
+
+        return incidentRepository.save(
+                incident
+        );
+    }
+
+    public boolean hasOpenIncident(
+            Service service
+    ) {
 
         return incidentRepository
-                .findFirstByServiceIdAndStatusOrderByStartedAtDesc(
-                        service.getId(),
-                        IncidentStatus.OPEN
+                .findByServiceId(
+                        service.getId()
                 )
-                .isPresent();
+                .stream()
+                .anyMatch(
+                        incident ->
+                                incident.getStatus()
+                                        == IncidentStatus.OPEN
+                );
     }
 }

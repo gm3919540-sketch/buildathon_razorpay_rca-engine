@@ -82,7 +82,15 @@ public class RCAService {
                 HISTORICAL EVIDENCE
                 %s
                 
-                Return ONLY valid JSON:
+                Return ONLY raw JSON.
+                
+                Do NOT use markdown.
+                Do NOT use ```json.
+                Do NOT use ```.
+                
+                Your response must start with { and end with }.
+                
+                Return exactly this JSON structure:
                 
                 {
                   "rootCause": "string",
@@ -110,13 +118,38 @@ public class RCAService {
                 .call()
                 .content();
 
+        if (response == null || response.isBlank()) {
+            throw new IllegalStateException(
+                    "Gemini returned an empty RCA response"
+            );
+        }
+
+        String cleanedResponse = response
+                .trim()
+                .replaceFirst("^```json\\s*", "")
+                .replaceFirst("^```\\s*", "")
+                .replaceFirst("\\s*```$", "")
+                .trim();
+
         RCAReport report;
+
         try {
+
             report = objectMapper.readValue(
-                    response,
+                    cleanedResponse,
                     RCAReport.class
             );
+
         } catch (JsonProcessingException exception) {
+
+            System.err.println(
+                    "RAW GEMINI RESPONSE:"
+            );
+
+            System.err.println(
+                    response
+            );
+
             throw new IllegalStateException(
                     "Gemini returned invalid RCA JSON",
                     exception

@@ -4,9 +4,9 @@ import com.rcaengine.dto.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDateTime;
 
@@ -23,7 +23,11 @@ public class GlobalExceptionHandler {
                 .getFieldErrors()
                 .stream()
                 .findFirst()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .map(error ->
+                        error.getField()
+                                + ": "
+                                + error.getDefaultMessage()
+                )
                 .orElse("Invalid request");
 
         return buildResponse(
@@ -32,17 +36,24 @@ public class GlobalExceptionHandler {
                 request
         );
     }
+
+
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ApiErrorResponse> handleConflict(
+    public ResponseEntity<ApiErrorResponse> handleIllegalStateException(
             IllegalStateException exception,
             HttpServletRequest request
     ) {
+
+        // Print actual backend error in IntelliJ console
+        exception.printStackTrace();
+
         return buildResponse(
-                HttpStatus.CONFLICT,
+                HttpStatus.INTERNAL_SERVER_ERROR,
                 exception.getMessage(),
                 request
         );
     }
+
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorResponse> handleBadRequest(
@@ -57,11 +68,14 @@ public class GlobalExceptionHandler {
         );
     }
 
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponse> handleRuntimeException(
             RuntimeException exception,
             HttpServletRequest request
     ) {
+
+        exception.printStackTrace();
 
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
@@ -70,11 +84,14 @@ public class GlobalExceptionHandler {
         );
     }
 
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleException(
             Exception exception,
             HttpServletRequest request
     ) {
+
+        exception.printStackTrace();
 
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
@@ -82,6 +99,7 @@ public class GlobalExceptionHandler {
                 request
         );
     }
+
 
     private ResponseEntity<ApiErrorResponse> buildResponse(
             HttpStatus status,
